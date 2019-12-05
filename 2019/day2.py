@@ -1,27 +1,28 @@
 class IntcodeProgram(object):
-    def __init__(self, program):
-        self.program = program
+    def __init__(self, initial_state):
+        self.initial_state = initial_state
+        self.memory = self.initial_state.copy()
         self.cursor = 0
         self.halted = False
 
     def _add(self):
-        index1 = self.program[self.cursor + 1]
-        index2 = self.program[self.cursor + 2]
-        index3 = self.program[self.cursor + 3]
-        val1 = self.program[index1]
-        val2 = self.program[index2]
+        index1 = self.memory[self.cursor + 1]
+        index2 = self.memory[self.cursor + 2]
+        index3 = self.memory[self.cursor + 3]
+        val1 = self.memory[index1]
+        val2 = self.memory[index2]
 
-        self.program[index3] = val1 + val2
+        self.memory[index3] = val1 + val2
         self.cursor += 4
 
     def _multiply(self):
-        index1 = self.program[self.cursor + 1]
-        index2 = self.program[self.cursor + 2]
-        index3 = self.program[self.cursor + 3]
-        val1 = self.program[index1]
-        val2 = self.program[index2]
+        index1 = self.memory[self.cursor + 1]
+        index2 = self.memory[self.cursor + 2]
+        index3 = self.memory[self.cursor + 3]
+        val1 = self.memory[index1]
+        val2 = self.memory[index2]
 
-        self.program[index3] = val1 * val2
+        self.memory[index3] = val1 * val2
         self.cursor += 4
 
     def _halt(self):
@@ -31,7 +32,7 @@ class IntcodeProgram(object):
         if self.halted:
             return
 
-        opcode = self.program[self.cursor]
+        opcode = self.memory[self.cursor]
         if opcode == 1:
             self._add()
         elif opcode == 2:
@@ -41,19 +42,32 @@ class IntcodeProgram(object):
         else:
             raise RuntimeError("Unrecognized opcode {} at position {}!".format(opcode, self.cursor))
 
-    def run(self):
+    def kontinue(self):
         while not self.halted:
             self.step()
+
+    def reset(self):
+        self.memory = self.initial_state.copy()
+        self.cursor = 0
+        self.halted = False
+
+    def run(self, input1=None, input2=None):
+        self.reset()
+        if input1 is not None:
+            self.memory[1] = input1
+        if input2 is not None:
+            self.memory[2] = input2
+
+        self.kontinue()
+        return self.memory[0]
 
 
 # Part 1
 with open('day-2-input.txt') as f:
     data = [int(x) for x in f.readline().strip().split(',')]
 
-# reset to 1202 Program Alarm state
-data[1] = 12
-data[2] = 2
-
 program = IntcodeProgram(data)
-program.run()
-print(program.program[0])
+result = program.run(12, 2)
+print(result)
+
+# for Part 2, see day-2-notes.txt
