@@ -5,14 +5,13 @@ UPPER_BOUND = 765869
 
 
 def enumerate_passwords(num_digits=6, allowed_digits=range(10), partial_solution=0,
-                        lower_bound=0, upper_bound=999999, repeats_allowed=True):
+                        lower_bound=0, upper_bound=999999):
     """
     Recursively determines a list of numbers meeting the given criteria:
     * have the given number of digits
     * only use the allowed digits (NB: allowed_digits must be range(n, 10) for some value 0 <= n <= 9)
     * between the given bounds, inclusive on both ends
-    * have all digits, left to right, either nondecreasing or
-        strictly increasing based on the value of repeats_allowed
+    * have all digits, left to right, be nondecreasing
 
     The recursion is based on picking a viable left-most digit and then
     recursing down to the remaining digits, and summing across all the possibilities.
@@ -52,11 +51,10 @@ def enumerate_passwords(num_digits=6, allowed_digits=range(10), partial_solution
     # the recursive bounds will be 25000 and 75000.
     res += enumerate_passwords(
         num_digits=num_digits-1,
-        allowed_digits=allowed_digits if repeats_allowed else allowed_digits[1:],
+        allowed_digits=allowed_digits,
         partial_solution=10*partial_solution + lower_bound_digit,
         lower_bound=lower_bound_remainder,
-        upper_bound=upper_bound_remainder if lower_bound_digit == upper_bound_digit else 10**(num_digits-1) - 1,
-        repeats_allowed=repeats_allowed
+        upper_bound=upper_bound_remainder if lower_bound_digit == upper_bound_digit else 10**(num_digits-1) - 1
     )
 
     # if the bounds start with the same digit, we're already done. otherwise
@@ -66,11 +64,10 @@ def enumerate_passwords(num_digits=6, allowed_digits=range(10), partial_solution
         # we will need to update the allowed digits.
         res += enumerate_passwords(
             num_digits=num_digits-1,
-            allowed_digits=range(upper_bound_digit, 10) if repeats_allowed else range(upper_bound_digit + 1, 10),
+            allowed_digits=range(upper_bound_digit, 10),
             partial_solution=10*partial_solution + upper_bound_digit,
             lower_bound=0,
-            upper_bound=upper_bound_remainder,
-            repeats_allowed=repeats_allowed
+            upper_bound=upper_bound_remainder
         )
 
         # recursive cases where we pick a digit strictly between the two
@@ -78,11 +75,10 @@ def enumerate_passwords(num_digits=6, allowed_digits=range(10), partial_solution
         for digit in range(lower_bound_digit+1, upper_bound_digit):
             res += enumerate_passwords(
                 num_digits=num_digits - 1,
-                allowed_digits=range(digit, 10) if repeats_allowed else range(digit+1, 10),
+                allowed_digits=range(digit, 10),
                 partial_solution=10*partial_solution + digit,
                 lower_bound=0,
-                upper_bound=10**(num_digits-1) - 1,
-                repeats_allowed=repeats_allowed
+                upper_bound=10**(num_digits-1) - 1
             )
 
     return res
