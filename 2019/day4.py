@@ -11,6 +11,9 @@ def enumerate_passwords(num_digits=6, allowed_digits=range(10),
     * between the given bounds, inclusive on both ends
     * have all digits, left to right, either nondecreasing or
         strictly increasing based on the value of repeats_allowed
+
+    The recursion is based on picking a viable left-most digit and then
+    recursing down to the remaining digits, and summing across all the possibilities.
     """
     # base cases
     if num_digits == 0:
