@@ -7,7 +7,7 @@ def enumerate_passwords(num_digits=6, allowed_digits=range(10),
     """
     Recursively determines how many numbers meet the given criteria:
     * have the given number of digits
-    * only use the allowed digits
+    * only use the allowed digits (NB: allowed_digits must be range(n, 10) for some value 0 <= n <= 9)
     * between the given bounds, inclusive on both ends
     * have all digits, left to right, either nondecreasing or
         strictly increasing based on the value of repeats_allowed
