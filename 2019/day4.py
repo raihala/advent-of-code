@@ -1,11 +1,13 @@
+import re
+
 LOWER_BOUND = 234208
 UPPER_BOUND = 765869
 
 
-def enumerate_passwords(num_digits=6, allowed_digits=range(10),
+def enumerate_passwords(num_digits=6, allowed_digits=range(10), partial_solution=0,
                         lower_bound=0, upper_bound=999999, repeats_allowed=True):
     """
-    Recursively determines how many numbers meet the given criteria:
+    Recursively determines a list of numbers meeting the given criteria:
     * have the given number of digits
     * only use the allowed digits (NB: allowed_digits must be range(n, 10) for some value 0 <= n <= 9)
     * between the given bounds, inclusive on both ends
@@ -17,9 +19,9 @@ def enumerate_passwords(num_digits=6, allowed_digits=range(10),
     """
     # base cases
     if num_digits == 0:
-        return 1
+        return [partial_solution]
     elif len(allowed_digits) == 0:
-        return 0
+        return []
 
     # eg lower bound = 123456 => digit = 1, remainder = 23456
     # but if allowed digits are eg 3-9, then:
@@ -39,9 +41,9 @@ def enumerate_passwords(num_digits=6, allowed_digits=range(10),
     upper_bound_digit, upper_bound_remainder = divmod(upper_bound, 10**(num_digits-1))
     # eg if upper bound is 2xxxxxx but allowed digits are 3-9, there are no possible solutions
     if upper_bound_digit < allowed_digits[0]:
-        return 0
+        return []
 
-    res = 0
+    res = []
 
     # recursive case where we pick the lower bound digit.
     # if bounds are 225000 and 300000, and we pick the digit 2,
@@ -51,6 +53,7 @@ def enumerate_passwords(num_digits=6, allowed_digits=range(10),
     res += enumerate_passwords(
         num_digits=num_digits-1,
         allowed_digits=allowed_digits if repeats_allowed else allowed_digits[1:],
+        partial_solution=10*partial_solution + lower_bound_digit,
         lower_bound=lower_bound_remainder,
         upper_bound=upper_bound_remainder if lower_bound_digit == upper_bound_digit else 10**(num_digits-1) - 1,
         repeats_allowed=repeats_allowed
@@ -64,6 +67,7 @@ def enumerate_passwords(num_digits=6, allowed_digits=range(10),
         res += enumerate_passwords(
             num_digits=num_digits-1,
             allowed_digits=range(upper_bound_digit, 10) if repeats_allowed else range(upper_bound_digit + 1, 10),
+            partial_solution=10*partial_solution + upper_bound_digit,
             lower_bound=0,
             upper_bound=upper_bound_remainder,
             repeats_allowed=repeats_allowed
@@ -75,6 +79,7 @@ def enumerate_passwords(num_digits=6, allowed_digits=range(10),
             res += enumerate_passwords(
                 num_digits=num_digits - 1,
                 allowed_digits=range(digit, 10) if repeats_allowed else range(digit+1, 10),
+                partial_solution=10*partial_solution + digit,
                 lower_bound=0,
                 upper_bound=10**(num_digits-1) - 1,
                 repeats_allowed=repeats_allowed
@@ -83,8 +88,17 @@ def enumerate_passwords(num_digits=6, allowed_digits=range(10),
     return res
 
 
-with_or_without_repeats = enumerate_passwords(lower_bound=LOWER_BOUND, upper_bound=UPPER_BOUND)
-without_repeats = enumerate_passwords(lower_bound=LOWER_BOUND, upper_bound=UPPER_BOUND, repeats_allowed=False)
-with_repeats = with_or_without_repeats - without_repeats
+potential_passwords = enumerate_passwords(lower_bound=LOWER_BOUND, upper_bound=UPPER_BOUND)
 
-print(with_repeats)
+# regex for passwords that have at least one digit repeated at least twice in a row
+digit_twice = re.compile('(.)\\1')
+
+# regex for passwords that have at least one digit repeated EXACTLY twice in a row
+# pycharm says group references aren't allowed in lookbehinds but this runs just fine? idk
+digit_exactly_twice = re.compile('(.)\\1(?<!\\1{3})(?!\\1)')
+
+passwords_with_repeated_digits = [p for p in potential_passwords if digit_twice.search(str(p))]
+passwords_with_twice_repeated_digits = [p for p in potential_passwords if digit_exactly_twice.search(str(p))]
+
+print("Part 1: {}".format(len(passwords_with_repeated_digits)))
+print("Part 2: {}".format(len(passwords_with_twice_repeated_digits)))
