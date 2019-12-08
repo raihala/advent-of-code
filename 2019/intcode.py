@@ -12,6 +12,10 @@ class IntcodeComputer(object):
             2: {'function': self._multiply, 'num_params': 3, 'moves_cursor': False},
             3: {'function': self._input, 'num_params': 1, 'moves_cursor': False},
             4: {'function': self._output, 'num_params': 1, 'moves_cursor': False},
+            5: {'function': self._jump_if_true, 'num_params': 2, 'moves_cursor': True},
+            6: {'function': self._jump_if_false, 'num_params': 2, 'moves_cursor': True},
+            7: {'function': self._less_than, 'num_params': 3, 'moves_cursor': False},
+            8: {'function': self._equals, 'num_params': 3, 'moves_cursor': False},
             99: {'function': self._halt, 'num_params': 0, 'moves_cursor': False}
         }
 
@@ -66,6 +70,66 @@ class IntcodeComputer(object):
             val = self.memory[val]
 
         return val
+
+    def _jump_if_true(self, param1, param2):
+        val1, mode1 = param1
+        val2, mode2 = param2
+
+        if mode1 == 0:
+            val1 = self.memory[val1]
+        if mode2 == 0:
+            val2 = self.memory[val2]
+
+        if val1 != 0:
+            self.cursor = val2
+        else:
+            self.cursor += 3
+
+    def _jump_if_false(self, param1, param2):
+        val1, mode1 = param1
+        val2, mode2 = param2
+
+        if mode1 == 0:
+            val1 = self.memory[val1]
+        if mode2 == 0:
+            val2 = self.memory[val2]
+
+        if val1 == 0:
+            self.cursor = val2
+        else:
+            self.cursor += 3
+
+    def _less_than(self, param1, param2, write_addr):
+        val1, mode1 = param1
+        val2, mode2 = param2
+        write_addr, _ = write_addr  # write_addr will always be in position mode
+
+        # dereference non-write parameters if they are in position mode
+        if mode1 == 0:
+            val1 = self.memory[val1]
+        if mode2 == 0:
+            val2 = self.memory[val2]
+
+        output = 0
+        if val1 < val2:
+            output = 1
+        self.memory[write_addr] = output
+
+    def _equals(self, param1, param2, write_addr):
+        val1, mode1 = param1
+        val2, mode2 = param2
+        write_addr, _ = write_addr  # write_addr will always be in position mode
+
+        # dereference non-write parameters if they are in position mode
+        if mode1 == 0:
+            val1 = self.memory[val1]
+        if mode2 == 0:
+            val2 = self.memory[val2]
+
+        output = 0
+        if val1 == val2:
+            output = 1
+        self.memory[write_addr] = output
 
     def _halt(self):
         self.halted = True
