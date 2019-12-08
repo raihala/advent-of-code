@@ -8,11 +8,11 @@ class IntcodeComputer(object):
         self.halted = False
 
         self.opcodes = {
-            1: {'function': self._add, 'num_params': 3},
-            2: {'function': self._multiply, 'num_params': 3},
-            3: {'function': self._input, 'num_params': 1},
-            4: {'function': self._output, 'num_params': 1},
-            99: {'function': self._halt, 'num_params': 0}
+            1: {'function': self._add, 'num_params': 3, 'moves_cursor': False},
+            2: {'function': self._multiply, 'num_params': 3, 'moves_cursor': False},
+            3: {'function': self._input, 'num_params': 1, 'moves_cursor': False},
+            4: {'function': self._output, 'num_params': 1, 'moves_cursor': False},
+            99: {'function': self._halt, 'num_params': 0, 'moves_cursor': False}
         }
 
     @staticmethod
@@ -80,12 +80,18 @@ class IntcodeComputer(object):
             opcode = self.opcodes[opcode_identifier]
         except KeyError:
             raise RuntimeError("Unrecognized opcode {} at address {}!".format(opcode_identifier, self.cursor))
+        param_values = self.memory[(self.cursor + 1):(self.cursor + 1 + opcode['num_params'])]
+        params = zip_longest(param_values, param_modes, fillvalue=0)
 
-        params = self.memory[(self.cursor + 1):(self.cursor + 1 + opcode['num_params'])]
-        output = opcode['function'](*zip_longest(params, param_modes, fillvalue=0))
+        output = opcode['function'](*params)
         if output is not None:
             print("Opcode {} at address {} yielded output: {}".format(opcode_identifier, self.cursor, output))
-        self.cursor += 1 + opcode['num_params']
+
+        # If the opcode takes responsibility for moving the
+        # instruction pointer, don't do anything. Otherwise go
+        # ahead and advance the instruction pointer here.
+        if opcode['moves_cursor'] is False:
+            self.cursor += 1 + opcode['num_params']
 
     def kontinue(self):
         while not self.halted:
