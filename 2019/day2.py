@@ -1,11 +1,11 @@
-from intcode import IntcodeProgram
+from intcode import IntcodeComputer
 
 
 # Part 1
 with open('day-2-input.txt') as f:
     data = [int(x) for x in f.readline().strip().split(',')]
 
-program = IntcodeProgram(data)
+program = IntcodeComputer(data)
 result = program.run(12, 2)
 print(result)
 

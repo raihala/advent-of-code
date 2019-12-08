@@ -1,29 +1,21 @@
-class IntcodeProgram(object):
+class IntcodeComputer(object):
     def __init__(self, initial_state):
         self.initial_state = initial_state
         self.memory = self.initial_state.copy()
         self.cursor = 0
         self.halted = False
 
-    def _add(self):
-        index1 = self.memory[self.cursor + 1]
-        index2 = self.memory[self.cursor + 2]
-        index3 = self.memory[self.cursor + 3]
-        val1 = self.memory[index1]
-        val2 = self.memory[index2]
+        self.opcodes = {
+            1: {'instruction': self._add, 'num_params': 3},
+            2: {'instruction': self._multiply, 'num_params': 3},
+            99: {'instruction': self._halt, 'num_params': 0}
+        }
 
-        self.memory[index3] = val1 + val2
-        self.cursor += 4
+    def _add(self, read_addr1, read_addr2, write_addr):
+        self.memory[write_addr] = self.memory[read_addr1] + self.memory[read_addr2]
 
-    def _multiply(self):
-        index1 = self.memory[self.cursor + 1]
-        index2 = self.memory[self.cursor + 2]
-        index3 = self.memory[self.cursor + 3]
-        val1 = self.memory[index1]
-        val2 = self.memory[index2]
-
-        self.memory[index3] = val1 * val2
-        self.cursor += 4
+    def _multiply(self, read_addr1, read_addr2, write_addr):
+        self.memory[write_addr] = self.memory[read_addr1] * self.memory[read_addr2]
 
     def _halt(self):
         self.halted = True
@@ -32,15 +24,15 @@ class IntcodeProgram(object):
         if self.halted:
             return
 
-        opcode = self.memory[self.cursor]
-        if opcode == 1:
-            self._add()
-        elif opcode == 2:
-            self._multiply()
-        elif opcode == 99:
-            self._halt()
-        else:
+        opcode_identifier = self.memory[self.cursor]
+        try:
+            opcode = self.opcodes[opcode_identifier]
+        except KeyError:
             raise RuntimeError("Unrecognized opcode {} at position {}!".format(opcode, self.cursor))
+
+        params = self.memory[(self.cursor + 1):(self.cursor + 1 + opcode['num_params'])]
+        opcode['instruction'](*params)
+        self.cursor += 1 + opcode['num_params']
 
     def kontinue(self):
         while not self.halted:
