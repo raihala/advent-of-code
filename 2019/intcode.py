@@ -1,13 +1,14 @@
 class IntcodeComputer(object):
-    def __init__(self, initial_state):
-        self.initial_state = initial_state
-        self.memory = self.initial_state.copy()
+    def __init__(self):
+        self.memory = []
         self.cursor = 0
         self.halted = False
 
         self.opcodes = {
             1: {'instruction': self._add, 'num_params': 3},
             2: {'instruction': self._multiply, 'num_params': 3},
+            3: {'instruction': self._input, 'num_params': 1},
+            4: {'instruction': self._output, 'num_params': 1},
             99: {'instruction': self._halt, 'num_params': 0}
         }
 
@@ -16,6 +17,13 @@ class IntcodeComputer(object):
 
     def _multiply(self, read_addr1, read_addr2, write_addr):
         self.memory[write_addr] = self.memory[read_addr1] * self.memory[read_addr2]
+
+    def _input(self, write_addr):
+        val = input("Input instruction expects user input: ")
+        self.memory[write_addr] = val.strip()
+
+    def _output(self, read_addr):
+        return self.memory[read_addr]
 
     def _halt(self):
         self.halted = True
@@ -28,10 +36,12 @@ class IntcodeComputer(object):
         try:
             opcode = self.opcodes[opcode_identifier]
         except KeyError:
-            raise RuntimeError("Unrecognized opcode {} at position {}!".format(opcode, self.cursor))
+            raise RuntimeError("Unrecognized opcode {} at address {}!".format(opcode_identifier, self.cursor))
 
         params = self.memory[(self.cursor + 1):(self.cursor + 1 + opcode['num_params'])]
-        opcode['instruction'](*params)
+        output = opcode['instruction'](*params)
+        if output:
+            print("Opcode {} at address {} yielded output: {}".format(opcode_identifier, self.cursor, output))
         self.cursor += 1 + opcode['num_params']
 
     def kontinue(self):
@@ -39,16 +49,10 @@ class IntcodeComputer(object):
             self.step()
 
     def reset(self):
-        self.memory = self.initial_state.copy()
         self.cursor = 0
         self.halted = False
 
-    def run(self, input1=None, input2=None):
+    def run(self, program):
         self.reset()
-        if input1 is not None:
-            self.memory[1] = input1
-        if input2 is not None:
-            self.memory[2] = input2
-
+        self.memory = program
         self.kontinue()
-        return self.memory[0]
