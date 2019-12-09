@@ -1,7 +1,13 @@
 from collections import namedtuple
+from enum import Enum, auto
 from itertools import zip_longest
 
 Opcode = namedtuple('Opcode', ['function', 'num_params', 'moves_cursor'])
+
+
+class State(Enum):
+    READY = auto()
+    HALTED = auto()
 
 
 class IntcodeComputer(object):
@@ -10,7 +16,7 @@ class IntcodeComputer(object):
         self.inputs = []
         self.outputs = []
         self.cursor = 0
-        self.halted = False
+        self.state = State.READY
 
         self.opcodes = {
             1: Opcode(self._add, 3, False),
@@ -140,10 +146,10 @@ class IntcodeComputer(object):
             self.memory[write_addr] = 0
 
     def _halt(self):
-        self.halted = True
+        self.state = State.HALTED
 
     def step(self):
-        if self.halted:
+        if self.state is not State.READY:
             return
 
         instruction = self.memory[self.cursor]
@@ -166,13 +172,15 @@ class IntcodeComputer(object):
             self.cursor += 1 + opcode.num_params
 
     def kontinue(self):
-        while not self.halted:
+        while self.state is not State.HALTED:
             self.step()
 
     def reset(self):
-        self.cursor = 0
-        self.halted = False
+        self.memory = []
+        self.inputs = []
         self.outputs = []
+        self.cursor = 0
+        self.state = State.READY
 
     def run(self, program, inputs=None):
         self.reset()
