@@ -5,16 +5,24 @@ from itertools import zip_longest
 Opcode = namedtuple('Opcode', ['function', 'num_params', 'moves_cursor'])
 
 
+class HaltException(Exception):
+    pass
+
+
+class WaitingForInputException(Exception):
+    pass
+
+
 class State(Enum):
     READY = auto()
     HALTED = auto()
+    WAITING = auto()
 
 
 class IntcodeComputer(object):
     def __init__(self):
         self.memory = []
         self.inputs = []
-        self.outputs = []
         self.cursor = 0
         self.state = State.READY
 
@@ -72,7 +80,7 @@ class IntcodeComputer(object):
 
     def _input(self, write_addr):
         if not self.inputs:
-            raise RuntimeError("No input available for input instruction at address {}!".format(self.cursor))
+            raise WaitingForInputException()
 
         write_addr, _ = write_addr  # write_addr will always be in position mode
         value, self.inputs = self.inputs[0], self.inputs[1:]
@@ -161,9 +169,14 @@ class IntcodeComputer(object):
         param_values = self.memory[(self.cursor + 1):(self.cursor + 1 + opcode.num_params)]
         params = zip_longest(param_values, param_modes, fillvalue=0)
 
-        output = opcode.function(*params)
-        if output is not None:
-            self.outputs.append(output)
+        try:
+            output = opcode.function(*params)
+        except HaltException:
+            self.state = State.HALTED
+            return
+        except WaitingForInputException:
+            self.state = State.WAITING
+            return
 
         # If the opcode takes responsibility for moving the
         # instruction pointer, don't do anything. Otherwise go
@@ -171,20 +184,33 @@ class IntcodeComputer(object):
         if opcode.moves_cursor is False:
             self.cursor += 1 + opcode.num_params
 
+        return output
+
     def kontinue(self):
-        while self.state is not State.HALTED:
-            self.step()
+        outputs = []
+        while self.state is State.READY:
+            output = self.step()
+            if output is not None:
+                outputs.append(output)
+        return outputs
+
+    def load(self, program, inputs=None):
+        self.reset()
+        self.memory = program.copy()
+        self.inputs = inputs.copy() if inputs else []
 
     def reset(self):
         self.memory = []
         self.inputs = []
-        self.outputs = []
         self.cursor = 0
         self.state = State.READY
 
     def run(self, program, inputs=None):
-        self.reset()
-        self.memory = program.copy()
-        self.inputs = inputs.copy() if inputs else []
-        self.kontinue()
-        return self.outputs
+        self.load(program, inputs)
+        outputs = self.kontinue()
+        return outputs
+
+    def send_input(self, value):
+        self.inputs.append(value)
+        if self.state == State.WAITING:
+            self.state = State.READY
