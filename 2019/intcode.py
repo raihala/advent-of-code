@@ -1,24 +1,27 @@
+from collections import namedtuple
 from itertools import zip_longest
+
+Opcode = namedtuple('Opcode', ['function', 'num_params', 'moves_cursor'])
 
 
 class IntcodeComputer(object):
-    def __init__(self, inputs=None):
+    def __init__(self):
         self.memory = []
-        self.inputs = inputs.copy() if inputs else []
+        self.inputs = []
         self.outputs = []
         self.cursor = 0
         self.halted = False
 
         self.opcodes = {
-            1: {'function': self._add, 'num_params': 3, 'moves_cursor': False},
-            2: {'function': self._multiply, 'num_params': 3, 'moves_cursor': False},
-            3: {'function': self._input, 'num_params': 1, 'moves_cursor': False},
-            4: {'function': self._output, 'num_params': 1, 'moves_cursor': False},
-            5: {'function': self._jump_if_true, 'num_params': 2, 'moves_cursor': True},
-            6: {'function': self._jump_if_false, 'num_params': 2, 'moves_cursor': True},
-            7: {'function': self._less_than, 'num_params': 3, 'moves_cursor': False},
-            8: {'function': self._equals, 'num_params': 3, 'moves_cursor': False},
-            99: {'function': self._halt, 'num_params': 0, 'moves_cursor': False}
+            1: Opcode(self._add, 3, False),
+            2: Opcode(self._multiply, 3, False),
+            3: Opcode(self._input, 1, False),
+            4: Opcode(self._output, 1, False),
+            5: Opcode(self._jump_if_true, 2, True),
+            6: Opcode(self._jump_if_false, 2, True),
+            7: Opcode(self._less_than, 3, False),
+            8: Opcode(self._equals, 3, False),
+            99: Opcode(self._halt, 0, False)
         }
 
     @staticmethod
@@ -149,18 +152,18 @@ class IntcodeComputer(object):
             opcode = self.opcodes[opcode_identifier]
         except KeyError:
             raise RuntimeError("Unrecognized opcode {} at address {}!".format(opcode_identifier, self.cursor))
-        param_values = self.memory[(self.cursor + 1):(self.cursor + 1 + opcode['num_params'])]
+        param_values = self.memory[(self.cursor + 1):(self.cursor + 1 + opcode.num_params)]
         params = zip_longest(param_values, param_modes, fillvalue=0)
 
-        output = opcode['function'](*params)
+        output = opcode.function(*params)
         if output is not None:
             self.outputs.append(output)
 
         # If the opcode takes responsibility for moving the
         # instruction pointer, don't do anything. Otherwise go
         # ahead and advance the instruction pointer here.
-        if opcode['moves_cursor'] is False:
-            self.cursor += 1 + opcode['num_params']
+        if opcode.moves_cursor is False:
+            self.cursor += 1 + opcode.num_params
 
     def kontinue(self):
         while not self.halted:
