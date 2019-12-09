@@ -1,32 +1,35 @@
 from intcode import IntcodeComputer
+from itertools import permutations
 
 with open('day-7-input.txt') as f:
     program = [int(x) for x in f.readline().strip().split(',')]
 
-computer = IntcodeComputer()
+
+def find_max_output(phases, program):
+    computers = [IntcodeComputer() for _ in range(len(phases))]
+    phase_permutations = permutations(phases)
+
+    max_output = 0
+    for permutation in phase_permutations:
+        # initialize computers, set initial IO signal to 0
+        for i in range(5):
+            computers[i].load(program, [permutation[i]])
+        io_signals = [0]
+
+        # continue looping through computers until all have halted
+        while not all([c.halted for c in computers]):
+            for c in computers:
+                c.send_inputs(io_signals)
+                io_signals = c.kontinue()
+
+        output = io_signals[0]
+        max_output = max(max_output, output)
+
+    return max_output
 
 
-def max_output(amplifiers, input_signal, available_phases):
-    """
-    Recursively determine the maximum possible output phase
-    """
-    # base case
-    if amplifiers == 0:
-        return input_signal
+part_1_answer = find_max_output(range(0, 5), program)
+part_2_answer = find_max_output(range(5, 10), program)
 
-    outputs = []
-    for phase in available_phases:
-        remaining_phases = available_phases.copy()
-        remaining_phases.remove(phase)
-        output = max_output(
-            amplifiers=amplifiers-1,
-            input_signal=computer.run(program, [phase, input_signal])[0],
-            available_phases=remaining_phases
-        )
-        outputs.append(output)
-
-    return max(outputs)
-
-
-res = max_output(5, 0, list(range(5)))  # range object doesn't have remove
-print(res)
+print(part_1_answer)
+print(part_2_answer)

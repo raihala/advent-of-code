@@ -15,8 +15,8 @@ class WaitingForInputException(Exception):
 
 class State(Enum):
     READY = auto()
-    HALTED = auto()
     WAITING = auto()
+    HALTED = auto()
 
 
 class IntcodeComputer(object):
@@ -210,7 +210,19 @@ class IntcodeComputer(object):
         outputs = self.kontinue()
         return outputs
 
-    def send_input(self, value):
-        self.inputs.append(value)
-        if self.state == State.WAITING:
+    def send_inputs(self, values):
+        self.inputs.extend(values)
+        if self.state is State.WAITING:
             self.state = State.READY
+
+    @property
+    def ready(self):
+        return self.state is State.READY
+
+    @property
+    def waiting(self):
+        return self.state is State.WAITING
+
+    @property
+    def halted(self):
+        return self.state is State.HALTED
