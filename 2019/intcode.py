@@ -24,6 +24,28 @@ class ParameterMode(Enum):
     RELATIVE = 2
 
 
+class Memory(list):
+    """
+    Basically a list, but with safe out-of-bounds indexing.
+    Retrieving an out-of-bounds index will return 0 without modifying the list.
+    Setting an out-of-bounds index will set appropriately and set all
+    intervening elements to 0.
+    """
+    def __getitem__(self, index):
+        try:
+            return super(Memory, self).__getitem__(index)
+        except IndexError:
+            return 0
+
+    def __setitem__(self, index, value):
+        try:
+            return super(Memory, self).__setitem__(index, value)
+        except IndexError:
+            new_registers = [0] * (index + 1 - len(self))
+            self.extend(new_registers)
+            self.__setitem__(index, value)
+
+
 class Parameter(object):
     def __init__(self, computer, value, mode=ParameterMode.POSITION):
         self._computer = computer
@@ -57,7 +79,7 @@ class Parameter(object):
 
 class IntcodeComputer(object):
     def __init__(self):
-        self.memory = []
+        self.memory = Memory()
         self.inputs = []
         self.cursor = 0
         self.relative_base = 0
@@ -187,11 +209,11 @@ class IntcodeComputer(object):
 
     def load(self, program, inputs=None):
         self.reset()
-        self.memory = program.copy()
+        self.memory = Memory(program)
         self.inputs = inputs.copy() if inputs else []
 
     def reset(self):
-        self.memory = []
+        self.memory = Memory()
         self.inputs = []
         self.cursor = 0
         self.relative_base = 0
