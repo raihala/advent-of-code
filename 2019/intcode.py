@@ -19,11 +19,49 @@ class State(Enum):
     HALTED = auto()
 
 
+class ParameterMode(Enum):
+    POSITION = 0
+    IMMEDIATE = 1
+    RELATIVE = 2
+
+
+class Parameter(object):
+    def __init__(self, computer, value, mode=ParameterMode.POSITION):
+        self._computer = computer
+        self.value = value
+        self.mode = mode
+
+    @property
+    def ref(self):
+        """
+        Return the memory address associated with this parameter, if any.
+        """
+        if self.mode is ParameterMode.IMMEDIATE:
+            return None  # should this throw an exception?
+        elif self.mode is ParameterMode.POSITION:
+            return self.value
+        elif self.mode is ParameterMode.RELATIVE:
+            return self.value + self._computer.relative_base
+
+    @property
+    def deref(self):
+        """
+        Return the data associated with this parameter.
+        """
+        if self.mode is ParameterMode.IMMEDIATE:
+            return self.value
+        elif self.mode is ParameterMode.POSITION:
+            return self._computer.memory[self.value]
+        elif self.mode is ParameterMode.RELATIVE:
+            return self._computer.memory[self.value + self._computer.relative_base]
+
+
 class IntcodeComputer(object):
     def __init__(self):
         self.memory = []
         self.inputs = []
         self.cursor = 0
+        self.relative_base = 0
         self.state = State.READY
 
         self.opcodes = {
@@ -35,6 +73,7 @@ class IntcodeComputer(object):
             6: Opcode(self._jump_if_false, 2, True),
             7: Opcode(self._less_than, 3, False),
             8: Opcode(self._equals, 3, False),
+            9: Opcode(self._adjust_relative_base, 1, False),
             99: Opcode(self._halt, 0, False)
         }
 
@@ -47,111 +86,53 @@ class IntcodeComputer(object):
         instruction, opcode_identifier = divmod(instruction, 100)
         parameter_modes = []
         while instruction:
-            instruction, parameter_mode = divmod(instruction, 10)
-            parameter_modes.append(parameter_mode)
+            instruction, mode = divmod(instruction, 10)
+            parameter_modes.append(ParameterMode(mode))
 
         return opcode_identifier, parameter_modes
 
-    def _add(self, param1, param2, write_addr):
-        val1, mode1 = param1
-        val2, mode2 = param2
-        write_addr, _ = write_addr  # write_addr will always be in position mode
+    def _add(self, val1, val2, write_addr):
+        self.memory[write_addr.ref] = val1.deref + val2.deref
 
-        # dereference non-write parameters if they are in position mode
-        if mode1 == 0:
-            val1 = self.memory[val1]
-        if mode2 == 0:
-            val2 = self.memory[val2]
-
-        self.memory[write_addr] = val1 + val2
-
-    def _multiply(self, param1, param2, write_addr):
-        val1, mode1 = param1
-        val2, mode2 = param2
-        write_addr, _ = write_addr  # write_addr will always be in position mode
-
-        # dereference non-write parameters if they are in position mode
-        if mode1 == 0:
-            val1 = self.memory[val1]
-        if mode2 == 0:
-            val2 = self.memory[val2]
-
-        self.memory[write_addr] = val1 * val2
+    def _multiply(self, val1, val2, write_addr):
+        self.memory[write_addr.ref] = val1.deref * val2.deref
 
     def _input(self, write_addr):
         if not self.inputs:
             raise WaitingForInputException()
 
-        write_addr, _ = write_addr  # write_addr will always be in position mode
         value, self.inputs = self.inputs[0], self.inputs[1:]
-        self.memory[write_addr] = value
+        self.memory[write_addr.ref] = value
 
-    def _output(self, param):
-        val, mode = param
-        if mode == 0:
-            val = self.memory[val]
-
-        return val
+    def _output(self, val):
+        return val.deref
 
     def _jump_if_true(self, param1, param2):
-        val1, mode1 = param1
-        val2, mode2 = param2
-
-        if mode1 == 0:
-            val1 = self.memory[val1]
-        if mode2 == 0:
-            val2 = self.memory[val2]
-
-        if val1 != 0:
-            self.cursor = val2
+        if param1.deref != 0:
+            self.cursor = param2.deref
         else:
             self.cursor += 3
 
     def _jump_if_false(self, param1, param2):
-        val1, mode1 = param1
-        val2, mode2 = param2
-
-        if mode1 == 0:
-            val1 = self.memory[val1]
-        if mode2 == 0:
-            val2 = self.memory[val2]
-
-        if val1 == 0:
-            self.cursor = val2
+        if param1.deref == 0:
+            self.cursor = param2.deref
         else:
             self.cursor += 3
 
-    def _less_than(self, param1, param2, write_addr):
-        val1, mode1 = param1
-        val2, mode2 = param2
-        write_addr, _ = write_addr  # write_addr will always be in position mode
-
-        # dereference non-write parameters if they are in position mode
-        if mode1 == 0:
-            val1 = self.memory[val1]
-        if mode2 == 0:
-            val2 = self.memory[val2]
-
-        if val1 < val2:
-            self.memory[write_addr] = 1
+    def _less_than(self, val1, val2, write_addr):
+        if val1.deref < val2.deref:
+            self.memory[write_addr.ref] = 1
         else:
-            self.memory[write_addr] = 0
+            self.memory[write_addr.ref] = 0
 
-    def _equals(self, param1, param2, write_addr):
-        val1, mode1 = param1
-        val2, mode2 = param2
-        write_addr, _ = write_addr  # write_addr will always be in position mode
-
-        # dereference non-write parameters if they are in position mode
-        if mode1 == 0:
-            val1 = self.memory[val1]
-        if mode2 == 0:
-            val2 = self.memory[val2]
-
-        if val1 == val2:
-            self.memory[write_addr] = 1
+    def _equals(self, val1, val2, write_addr):
+        if val1.deref == val2.deref:
+            self.memory[write_addr.ref] = 1
         else:
-            self.memory[write_addr] = 0
+            self.memory[write_addr.ref] = 0
+
+    def _adjust_relative_base(self, param1):
+        pass
 
     def _halt(self):
         raise HaltException()
@@ -162,12 +143,23 @@ class IntcodeComputer(object):
 
         instruction = self.memory[self.cursor]
         opcode_identifier, param_modes = self._parse_instruction(instruction)
+
         try:
             opcode = self.opcodes[opcode_identifier]
         except KeyError:
             raise RuntimeError("Unrecognized opcode {} at address {}!".format(opcode_identifier, self.cursor))
+
         param_values = self.memory[(self.cursor + 1):(self.cursor + 1 + opcode.num_params)]
-        params = zip_longest(param_values, param_modes, fillvalue=0)
+        param_modes += [ParameterMode.POSITION] * (opcode.num_params - len(param_modes))
+        params = []
+        for i in range(opcode.num_params):
+            params.append(
+                Parameter(
+                    computer=self,
+                    value=param_values[i],
+                    mode=param_modes[i]
+                )
+            )
 
         try:
             output = opcode.function(*params)
@@ -203,6 +195,7 @@ class IntcodeComputer(object):
         self.memory = []
         self.inputs = []
         self.cursor = 0
+        self.relative_base = 0
         self.state = State.READY
 
     def run(self, program, inputs=None):
