@@ -2,8 +2,10 @@ from itertools import zip_longest
 
 
 class IntcodeComputer(object):
-    def __init__(self):
+    def __init__(self, inputs=None):
         self.memory = []
+        self.inputs = inputs.copy() if inputs else []
+        self.outputs = []
         self.cursor = 0
         self.halted = False
 
@@ -60,9 +62,12 @@ class IntcodeComputer(object):
         self.memory[write_addr] = val1 * val2
 
     def _input(self, write_addr):
+        if not self.inputs:
+            raise RuntimeError("No input available for input instruction at address {}!".format(self.cursor))
+
         write_addr, _ = write_addr  # write_addr will always be in position mode
-        val = input("Input opcode expects user input: ")
-        self.memory[write_addr] = int(val.strip())
+        value, self.inputs = self.inputs[0], self.inputs[1:]
+        self.memory[write_addr] = value
 
     def _output(self, param):
         val, mode = param
@@ -110,10 +115,10 @@ class IntcodeComputer(object):
         if mode2 == 0:
             val2 = self.memory[val2]
 
-        output = 0
         if val1 < val2:
-            output = 1
-        self.memory[write_addr] = output
+            self.memory[write_addr] = 1
+        else:
+            self.memory[write_addr] = 0
 
     def _equals(self, param1, param2, write_addr):
         val1, mode1 = param1
@@ -126,10 +131,10 @@ class IntcodeComputer(object):
         if mode2 == 0:
             val2 = self.memory[val2]
 
-        output = 0
         if val1 == val2:
-            output = 1
-        self.memory[write_addr] = output
+            self.memory[write_addr] = 1
+        else:
+            self.memory[write_addr] = 0
 
     def _halt(self):
         self.halted = True
@@ -149,7 +154,7 @@ class IntcodeComputer(object):
 
         output = opcode['function'](*params)
         if output is not None:
-            print("Opcode {} at address {} yielded output: {}".format(opcode_identifier, self.cursor, output))
+            self.outputs.append(output)
 
         # If the opcode takes responsibility for moving the
         # instruction pointer, don't do anything. Otherwise go
@@ -164,8 +169,11 @@ class IntcodeComputer(object):
     def reset(self):
         self.cursor = 0
         self.halted = False
+        self.outputs = []
 
-    def run(self, program):
+    def run(self, program, inputs=None):
         self.reset()
-        self.memory = program
+        self.memory = program.copy()
+        self.inputs = inputs.copy() if inputs else []
         self.kontinue()
+        return self.outputs
