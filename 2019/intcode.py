@@ -154,7 +154,7 @@ class IntcodeComputer(object):
             self.memory[write_addr] = 0
 
     def _halt(self):
-        self.state = State.HALTED
+        raise HaltException()
 
     def step(self):
         if self.state is not State.READY:
