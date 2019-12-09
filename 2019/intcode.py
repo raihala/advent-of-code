@@ -1,6 +1,5 @@
 from collections import namedtuple
 from enum import Enum, auto
-from itertools import zip_longest
 
 Opcode = namedtuple('Opcode', ['function', 'num_params', 'moves_cursor'])
 
@@ -107,15 +106,15 @@ class IntcodeComputer(object):
     def _output(self, val):
         return val.deref
 
-    def _jump_if_true(self, param1, param2):
-        if param1.deref != 0:
-            self.cursor = param2.deref
+    def _jump_if_true(self, val, cursor_addr):
+        if val.deref != 0:
+            self.cursor = cursor_addr.deref
         else:
             self.cursor += 3
 
-    def _jump_if_false(self, param1, param2):
-        if param1.deref == 0:
-            self.cursor = param2.deref
+    def _jump_if_false(self, val, cursor_addr):
+        if val.deref == 0:
+            self.cursor = cursor_addr.deref
         else:
             self.cursor += 3
 
@@ -131,8 +130,8 @@ class IntcodeComputer(object):
         else:
             self.memory[write_addr.ref] = 0
 
-    def _adjust_relative_base(self, param1):
-        pass
+    def _adjust_relative_base(self, val):
+        self.relative_base += val.deref
 
     def _halt(self):
         raise HaltException()
