@@ -2,3 +2,6 @@
 venv/
 __pycache__/
 *.txt
+2018/
+2019/
+input
