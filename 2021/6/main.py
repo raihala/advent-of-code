@@ -1,5 +1,3 @@
-from collections import Counter
-
 DESCENDENTS_AFTER_N_DAYS = {}
 
 
@@ -19,10 +17,10 @@ def descendents_after_n_days(days_remaining):
 
 
 def calculate(initial_state, total_days):
-    effective_days = Counter([total_days + (7 - x) for x in initial_state])
+    effective_days = [total_days + (7 - x) for x in initial_state]
     num_fish = len(initial_state)
-    for days, multiplier in effective_days.items():
-        num_fish += multiplier * descendents_after_n_days(days)
+    for days in effective_days:
+        num_fish += descendents_after_n_days(days)
     return num_fish
 
 
