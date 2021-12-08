@@ -34,10 +34,8 @@ def decode(signals):
     return {k: list(v)[0] for k, v in char_map.items()}
 
 
-data = []
 with open('input') as f:
-    for line in f:
-        data.append(line.strip().split())
+    data = [line.strip().split() for line in f]
 
 part_1_res = len([x for d in data for x in d[-4:] if len(x) in (2, 3, 4, 7)])
 print(part_1_res)
