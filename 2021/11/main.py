@@ -17,6 +17,7 @@ while True:
     # iterate through steps indefinitely
     data = [[x + 1 for x in y] for y in data]
     step_flashes = 0
+
     while True:
         # scan the grid repeatedly for new flashes. once everything
         # has settled down and there are no new flashes, we can stop checking
@@ -36,14 +37,17 @@ while True:
                             data[ny][nx] += 1
         if not new_flashes:
             break
+
     data = [[max(x, 0) for x in y] for y in data]  # reset flashes from -1 to 0
     flashes += step_flashes
     steps += 1
+
     if steps == 100:
         print(f'Part 1: {flashes}')
         part_1_complete = True
         if part_2_complete:
             break
+
     if step_flashes == 100:
         print(f'Part 2: {steps}')
         part_2_complete = True
