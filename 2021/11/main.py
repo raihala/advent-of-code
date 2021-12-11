@@ -13,6 +13,7 @@ flashes = 0
 steps = 0
 part_1_complete = False
 part_2_complete = False
+
 while True:
     # iterate through steps indefinitely
     data = [[x + 1 for x in y] for y in data]
