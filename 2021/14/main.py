@@ -11,10 +11,11 @@ def count(string, steps):
         return COUNT[(string, steps)]
     counter = Counter()
     for i in range(1, len(string)):
+        # calculate future polymer growth on a per-pair basis
         pair = string[i-1:i+1]
-        new_string = pair[0] + RULES[pair] + pair[1]
-        subcounter = count(new_string, steps-1)
-        COUNT[(new_string, steps-1)] = subcounter
+        substring = pair[0] + RULES[pair] + pair[1]
+        subcounter = count(substring, steps-1)
+        COUNT[(substring, steps-1)] = subcounter
         counter += subcounter
     for interior_char in string[1:len(string)-1]:
         # need to adjust for double counting
