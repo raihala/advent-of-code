@@ -30,18 +30,17 @@ def parse_packet(packet, cursor=0):
     else:
         length_type_id = packet[cursor]
         cursor += 1
+        subpackets = []
         if length_type_id == '0':
             subpacket_bit_length = int(packet[cursor:cursor + 15], base=2)
             cursor += 15
             stop_index = cursor + subpacket_bit_length
-            subpackets = []
             while cursor < stop_index:
                 subpacket, cursor = parse_packet(packet, cursor)
                 subpackets.append(subpacket)
         else:
             num_subpackets = int(packet[cursor:cursor + 11], base=2)
             cursor += 11
-            subpackets = []
             for i in range(num_subpackets):
                 subpacket, cursor = parse_packet(packet, cursor)
                 subpackets.append(subpacket)
