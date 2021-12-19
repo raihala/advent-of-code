@@ -146,7 +146,7 @@ scanner_locations = [t for r, t in absolute_transformations.values()]
 max_dist = 0
 for i in range(len(scanner_locations) - 1):
     for j in range(i+1, len(scanner_locations)):
-        dist = sum([abs(x) for x in scanner_locations[j] - scanner_locations[i]])
+        dist = sum(distance(scanner_locations[i], scanner_locations[j]))
         max_dist = max(max_dist, dist)
 
 part_2_res = max_dist
