@@ -35,14 +35,12 @@ p2_score = 0
 rolls = 0
 
 while True:
-    p1_pos = next(p1_turn)
-    p1_score += p1_pos
+    p1_score += next(p1_turn)
     rolls += 3
     if p1_score >= 1000:
         break
 
-    p2_pos = next(p2_turn)
-    p2_score += p2_pos
+    p2_score += next(p2_turn)
     rolls += 3
     if p2_score >= 1000:
         break
@@ -57,6 +55,7 @@ cache = {}  # will map (pos1, pos2, score1, score2) tuples to [wins1, wins2] pai
 def winning_universes(pos1, pos2, score1, score2):
     if (pos1, pos2, score1, score2) in cache:
         return cache[(pos1, pos2, score1, score2)]
+
     wins = [0, 0]
     for p1, u1 in dice_rolls:
         new_pos1 = m(pos1 + p1)
