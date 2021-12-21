@@ -50,12 +50,11 @@ while True:
 part_1_res = min(p1_score, p2_score) * rolls
 print(part_1_res)
 
-
-cache = {}  # maps (pos1, score1, pos2, score2) tuples to [wins1, wins2] pairs
 dice_rolls = [(3, 1), (4, 3), (5, 6), (6, 7), (7, 6), (8, 3), (9, 1)]
+cache = {}  # will map (pos1, pos2, score1, score2) tuples to [wins1, wins2] pairs
 
 
-def winning_universes(pos1, score1, pos2, score2):
+def winning_universes(pos1, pos2, score1, score2):
     if (pos1, pos2, score1, score2) in cache:
         return cache[(pos1, pos2, score1, score2)]
     wins = [0, 0]
@@ -74,7 +73,7 @@ def winning_universes(pos1, score1, pos2, score2):
                 continue
 
             later_wins1, later_wins2 = winning_universes(
-                new_pos1, new_score1, new_pos2, new_score2
+                new_pos1, new_pos2, new_score1, new_score2
             )
             wins[0] += u1 * u2 * later_wins1
             wins[1] += u1 * u2 * later_wins2
@@ -83,6 +82,6 @@ def winning_universes(pos1, score1, pos2, score2):
     return wins
 
 
-universes = winning_universes(p1_start, 0, p2_start, 0)
+universes = winning_universes(p1_start, p2_start, 0, 0)
 part_2_res = max(universes)
 print(part_2_res)
