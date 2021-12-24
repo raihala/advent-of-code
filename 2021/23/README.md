@@ -1,0 +1,1 @@
+Code for today is super messy and only does part 2 as is because I overwrote the bits from part 1. Also it's hardcoded with the values from my input. Hoping to come back and clean this up (and maybe also speed it up? currently takes 14 seconds).
